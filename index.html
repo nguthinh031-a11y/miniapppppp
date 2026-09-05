@@ -251,10 +251,12 @@
         let tg = window.Telegram.WebApp;
         try { tg.expand(); } catch(e) {}
 
+        // Khởi tạo thông tin user an toàn (Tự nhận diện Telegram, nếu chạy web ngoài sẽ lấy tài khoản mặc định tránh lỗi "đang tải")
+        let tgUser = tg.initDataUnsafe?.user;
         let currentUser = {
-            id: tg.initDataUnsafe?.user?.id || 8647955563, 
-            first_name: tg.initDataUnsafe?.user?.first_name || 'Khách Telegram',
-            username: tg.initDataUnsafe?.user?.username || 'guest'
+            id: tgUser?.id || 8647955563, 
+            first_name: tgUser?.first_name || (tgUser?.id ? 'Khách Telegram' : 'Admin Demo (Web Browser)'),
+            username: tgUser?.username || 'admin_test'
         };
 
         function initUser() {
