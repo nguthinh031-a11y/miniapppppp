@@ -112,7 +112,7 @@
             <div class="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-2xl p-3">
                 <span class="text-xs text-brand-400 font-bold">Khu Vực Quản Trị Viên</span>
                 <button onclick="renderUI()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs transition">
-                    <i class="fa-solid fa-rotate mr-1"></i> Làm mới dữ liệu
+                    <i class="fa-solid fa-rotate mr-1"></i> Làm mới
                 </button>
             </div>
 
@@ -124,7 +124,12 @@
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
-                <h3 class="text-sm font-bold text-brand-400">Duyệt Yêu Cầu Nạp Tiền</h3>
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-brand-400">Duyệt Yêu Cầu Nạp Tiền</h3>
+                    <button onclick="adminApproveAllDeposits()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold transition">
+                        <i class="fa-solid fa-check-double mr-1"></i> Duyệt Tất Cả
+                    </button>
+                </div>
                 <div id="admin-deposit-requests" class="space-y-2"></div>
             </div>
 
@@ -146,7 +151,6 @@
 
     <!-- Script Logic -->
     <script>
-        // THÊM ID TELEGRAM CỦA BẠN VÀO MẢNG DƯỚI ĐÂY ĐỂ HIỆN TAB ADMIN
         const ADMIN_IDS = [8647955563]; 
         const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY'; // Bot Token[span_0](start_span)[span_0](end_span)
 
@@ -218,7 +222,6 @@
         let tg = window.Telegram.WebApp;
         try { tg.expand(); } catch(e) {}
 
-        // Lấy thông tin user hiện tại từ Telegram WebApp
         let currentUser = {
             id: tg.initDataUnsafe?.user?.id || 8647955563, 
             first_name: tg.initDataUnsafe?.user?.first_name || 'Khách Hàng',
@@ -242,7 +245,6 @@
             document.getElementById('user-id').innerText = currentUser.id;
             document.getElementById('user-balance').innerText = (uData.balance || 0).toLocaleString('vi-VN') + ' đ';
 
-            // Kiểm tra phân quyền Admin chính xác
             let numericUserId = Number(currentUser.id);
             if (ADMIN_IDS.includes(numericUserId)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
@@ -377,7 +379,7 @@
 
             let db = getDB();
             let depositReq = {
-                id: 'dep_' + Date.now(),
+                id: 'dep_' + Date.now() + '_' + Math.floor(Math.random()*1000),
                 userId: currentUser.id,
                 userName: currentUser.first_name,
                 amount: amount,
@@ -391,7 +393,6 @@
             amountInput.value = '';
             alert('Đã gửi yêu cầu nạp tiền! Vui lòng chờ Admin duyệt.');
 
-            // Gửi thông báo thuần về Telegram của Admin[span_1](start_span)[span_1](end_span)
             sendDepositNotificationToAdmin(depositReq);
         }
 
@@ -457,10 +458,8 @@
                 db.users[dep.userId] = { balance: 0, history: [] };
             }
 
-            // 1. Cộng tiền vào số dư của user
             db.users[dep.userId].balance += dep.amount;
             
-            // 2. Lưu lịch sử giao dịch vào tài khoản user
             if(!db.users[dep.userId].history) db.users[dep.userId].history = [];
             db.users[dep.userId].history.unshift({
                 time: new Date().toLocaleString('vi-VN'),
@@ -469,14 +468,46 @@
                 key: 'Đã duyệt qua Mini App'
             });
 
-            // 3. Xóa yêu cầu khỏi danh sách chờ
             db.deposits.splice(idx, 1);
             saveDB(db);
             
             alert(`Đã duyệt nạp thành công ${dep.amount.toLocaleString()}đ cho user ID: ${dep.userId}`);
-            
-            // 4. Gửi thông báo trực tiếp về Telegram cá nhân của người dùng[span_2](start_span)[span_2](end_span)
             sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);
+        }
+
+        // Tính năng duyệt tất cả yêu cầu nạp tiền cùng lúc
+        function adminApproveAllDeposits() {
+            let db = getDB();
+            if (!db.deposits || db.deposits.length === 0) {
+                return alert('Không có yêu cầu nạp tiền nào để duyệt!');
+            }
+
+            if (!confirm(`Bạn có chắc chắn muốn duyệt tất cả ${db.deposits.length} yêu cầu nạp tiền đang chờ?`)) return;
+
+            let pendingDeposits = [...db.deposits];
+            db.deposits = []; // Xóa toàn bộ hàng đợi
+
+            pendingDeposits.forEach(dep => {
+                if (!db.users[dep.userId]) {
+                    db.users[dep.userId] = { balance: 0, history: [] };
+                }
+
+                db.users[dep.userId].balance += dep.amount;
+
+                if (!db.users[dep.userId].history) db.users[dep.userId].history = [];
+                db.users[dep.userId].history.unshift({
+                    time: new Date().toLocaleString('vi-VN'),
+                    name: `Nạp Tiền Thành Công (+${dep.amount.toLocaleString()}đ)`,
+                    price: 0,
+                    key: 'Duyệt hàng loạt qua Mini App'
+                });
+
+                // Gửi thông báo cho từng user qua Telegram[span_1](start_span)[span_1](end_span)
+                sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);
+            });
+
+            saveDB(db);
+            alert(`Đã duyệt thành công ${pendingDeposits.length} yêu cầu nạp tiền!`);
         }
 
         function adminSaveNotice() {
