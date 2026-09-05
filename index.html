@@ -152,7 +152,7 @@
     <!-- Script Logic -->
     <script>
         const ADMIN_IDS = [8647955563]; 
-        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY'; // Bot Token[span_0](start_span)[span_0](end_span)
+        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY';[span_0](start_span)[span_0](end_span)
 
         async function sendDepositNotificationToAdmin(depositObj) {
             if (!BOT_TOKEN) return;
@@ -458,7 +458,8 @@
                 db.users[dep.userId] = { balance: 0, history: [] };
             }
 
-            db.users[dep.userId].balance += dep.amount;
+            // Cộng tiền trực tiếp cho user
+            db.users[dep.userId].balance += Number(dep.amount);
             
             if(!db.users[dep.userId].history) db.users[dep.userId].history = [];
             db.users[dep.userId].history.unshift({
@@ -468,14 +469,15 @@
                 key: 'Đã duyệt qua Mini App'
             });
 
+            // Xóa yêu cầu khỏi danh sách chờ
             db.deposits.splice(idx, 1);
             saveDB(db);
+            renderUI();
             
             alert(`Đã duyệt nạp thành công ${dep.amount.toLocaleString()}đ cho user ID: ${dep.userId}`);
             sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);
         }
 
-        // Tính năng duyệt tất cả yêu cầu nạp tiền cùng lúc
         function adminApproveAllDeposits() {
             let db = getDB();
             if (!db.deposits || db.deposits.length === 0) {
@@ -485,14 +487,14 @@
             if (!confirm(`Bạn có chắc chắn muốn duyệt tất cả ${db.deposits.length} yêu cầu nạp tiền đang chờ?`)) return;
 
             let pendingDeposits = [...db.deposits];
-            db.deposits = []; // Xóa toàn bộ hàng đợi
+            db.deposits = []; 
 
             pendingDeposits.forEach(dep => {
                 if (!db.users[dep.userId]) {
                     db.users[dep.userId] = { balance: 0, history: [] };
                 }
 
-                db.users[dep.userId].balance += dep.amount;
+                db.users[dep.userId].balance += Number(dep.amount);
 
                 if (!db.users[dep.userId].history) db.users[dep.userId].history = [];
                 db.users[dep.userId].history.unshift({
@@ -502,11 +504,11 @@
                     key: 'Duyệt hàng loạt qua Mini App'
                 });
 
-                // Gửi thông báo cho từng user qua Telegram[span_1](start_span)[span_1](end_span)
-                sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);
+                sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);[span_1](start_span)[span_1](end_span)
             });
 
             saveDB(db);
+            renderUI();
             alert(`Đã duyệt thành công ${pendingDeposits.length} yêu cầu nạp tiền!`);
         }
 
