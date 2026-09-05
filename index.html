@@ -109,6 +109,13 @@
 
         <!-- TAB: ADMIN PANEL -->
         <div id="view-admin" class="hidden space-y-4">
+            <div class="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-2xl p-3">
+                <span class="text-xs text-brand-400 font-bold">Khu Vực Quản Trị Viên</span>
+                <button onclick="renderUI()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Làm mới dữ liệu
+                </button>
+            </div>
+
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
                 <h3 class="text-sm font-bold text-brand-400">Thêm Sản Phẩm Mới</h3>
                 <input type="text" id="admin-prod-name" placeholder="Tên sản phẩm" class="w-full bg-black border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
@@ -139,10 +146,10 @@
 
     <!-- Script Logic -->
     <script>
-        const ADMIN_IDS = [8647955563]; // ID Telegram của Admin
-        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY'; // Bot Token của bạn[span_2](start_span)[span_2](end_span)
+        // THÊM ID TELEGRAM CỦA BẠN VÀO MẢNG DƯỚI ĐÂY ĐỂ HIỆN TAB ADMIN
+        const ADMIN_IDS = [8647955563]; 
+        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY'; // Bot Token[span_0](start_span)[span_0](end_span)
 
-        // Gửi thông báo dạng thông tin thuần túy về Telegram cho Admin khi có khách nạp[span_3](start_span)[span_3](end_span)
         async function sendDepositNotificationToAdmin(depositObj) {
             if (!BOT_TOKEN) return;
             try {
@@ -211,6 +218,7 @@
         let tg = window.Telegram.WebApp;
         try { tg.expand(); } catch(e) {}
 
+        // Lấy thông tin user hiện tại từ Telegram WebApp
         let currentUser = {
             id: tg.initDataUnsafe?.user?.id || 8647955563, 
             first_name: tg.initDataUnsafe?.user?.first_name || 'Khách Hàng',
@@ -234,7 +242,9 @@
             document.getElementById('user-id').innerText = currentUser.id;
             document.getElementById('user-balance').innerText = (uData.balance || 0).toLocaleString('vi-VN') + ' đ';
 
-            if (ADMIN_IDS.includes(Number(currentUser.id))) {
+            // Kiểm tra phân quyền Admin chính xác
+            let numericUserId = Number(currentUser.id);
+            if (ADMIN_IDS.includes(numericUserId)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
             } else {
                 document.getElementById('tab-admin').classList.add('hidden');
@@ -381,7 +391,7 @@
             amountInput.value = '';
             alert('Đã gửi yêu cầu nạp tiền! Vui lòng chờ Admin duyệt.');
 
-            // Gửi thông báo thuần về Telegram của Admin[span_4](start_span)[span_4](end_span)
+            // Gửi thông báo thuần về Telegram của Admin[span_1](start_span)[span_1](end_span)
             sendDepositNotificationToAdmin(depositReq);
         }
 
@@ -447,7 +457,7 @@
                 db.users[dep.userId] = { balance: 0, history: [] };
             }
 
-            // 1. Cộng tiền vào số dư của user trực tiếp trên Mini App
+            // 1. Cộng tiền vào số dư của user
             db.users[dep.userId].balance += dep.amount;
             
             // 2. Lưu lịch sử giao dịch vào tài khoản user
@@ -459,13 +469,13 @@
                 key: 'Đã duyệt qua Mini App'
             });
 
-            // 3. Xóa yêu cầu khỏi hàng đợi của Admin
+            // 3. Xóa yêu cầu khỏi danh sách chờ
             db.deposits.splice(idx, 1);
             saveDB(db);
             
             alert(`Đã duyệt nạp thành công ${dep.amount.toLocaleString()}đ cho user ID: ${dep.userId}`);
             
-            // 4. Gửi thông báo trực tiếp về Telegram cá nhân của người dùng[span_5](start_span)[span_5](end_span)
+            // 4. Gửi thông báo trực tiếp về Telegram cá nhân của người dùng[span_2](start_span)[span_2](end_span)
             sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công vào tài khoản của bạn.`);
         }
 
