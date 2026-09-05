@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         function getThemeConfig() {
-            let data = localStorage.getItem('miniapp_db_pink_v4');
+            let data = localStorage.getItem('miniapp_db_pink_v5');
             let primaryColor = '#db2777';
             if (data) {
                 try {
@@ -188,7 +188,7 @@
     <!-- Script Logic -->
     <script>
         const ADMIN_IDS = [8647955563]; 
-        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY';[span_1](start_span)[span_1](end_span)
+        const BOT_TOKEN = '8774262600:AAFcG0dGDWHJjWpHimRErS9vVbWQj82TdNY';[span_0](start_span)[span_0](end_span)
 
         async function sendDepositNotificationToAdmin(depositObj) {
             if (!BOT_TOKEN) return;
@@ -235,29 +235,40 @@
         };
 
         function getDB() {
-            let data = localStorage.getItem('miniapp_db_pink_v4');
+            let data = localStorage.getItem('miniapp_db_pink_v5');
             if (!data) {
                 data = JSON.stringify(defaultData);
-                localStorage.setItem('miniapp_db_pink_v4', data);
+                localStorage.setItem('miniapp_db_pink_v5', data);
             }
             return JSON.parse(data);
         }
 
         function saveDB(data) {
-            localStorage.setItem('miniapp_db_pink_v4', JSON.stringify(data));
+            localStorage.setItem('miniapp_db_pink_v5', JSON.stringify(data));
             window.dispatchEvent(new Event('storage_updated'));
         }
 
-        let tg = window.Telegram.WebApp;
-        try { tg.expand(); } catch(e) {}
+        // Lấy thông tin user an toàn tuyệt đối, chống lỗi "Đang tải"
+        let currentUser = { id: 8647955563, first_name: 'Quản Trị Viên', username: 'admin' };
 
-        // Khởi tạo thông tin user an toàn (Tự nhận diện Telegram, nếu chạy web ngoài sẽ lấy tài khoản mặc định tránh lỗi "đang tải")
-        let tgUser = tg.initDataUnsafe?.user;
-        let currentUser = {
-            id: tgUser?.id || 8647955563, 
-            first_name: tgUser?.first_name || (tgUser?.id ? 'Khách Telegram' : 'Admin Demo (Web Browser)'),
-            username: tgUser?.username || 'admin_test'
-        };
+        function resolveUser() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    let tg = window.Telegram.WebApp;
+                    tg.expand();
+                    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                        currentUser = {
+                            id: tg.initDataUnsafe.user.id,
+                            first_name: tg.initDataUnsafe.user.first_name || 'Thành viên Telegram',
+                            username: tg.initDataUnsafe.user.username || 'tg_user'
+                        };
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Không đọc được Telegram WebApp context, chuyển về chế độ mặc định.');
+            }
+        }
 
         function initUser() {
             let db = getDB();
@@ -273,6 +284,7 @@
         }
 
         function renderUI() {
+            resolveUser();
             initUser();
             let db = getDB();
             applyTheme(db.themeColor || '#db2777');
@@ -540,7 +552,7 @@
                     price: 0,
                     key: 'Duyệt hàng loạt'
                 });
-                sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công.`);[span_2](start_span)[span_2](end_span)
+                sendTelegramMessage(dep.userId, `✅ <b>Tài khoản đã được cộng tiền!</b>\nSố dư: <b>+${dep.amount.toLocaleString()}đ</b> đã được cộng thành công.`);[span_1](start_span)[span_1](end_span)
             });
 
             saveDB(db);
